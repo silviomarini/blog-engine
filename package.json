@@ -4,6 +4,16 @@
   "description": "Blog engine package",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./translate": {
+      "types": "./dist/translate.d.ts",
+      "default": "./dist/translate.js"
+    }
+  },
   "files": [
     "dist",
     "migrations"

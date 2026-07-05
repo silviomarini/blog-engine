@@ -24,8 +24,8 @@ export {
 
 export { linkArticles, unlinkArticle } from './link'
 
-export type { TranslateArticleOptions } from './translate'
-export { translateArticle } from './translate'
+// translateArticle lives in the "./translate" subpath export to keep openai
+// out of the dependency graph for consumers who don't need translation.
 
 export type { RouteHandlerConfig } from './adapters/nextjs'
 export {
