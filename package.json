@@ -1,6 +1,6 @@
 {
-  "name": "@marinisilvio/blog-engine",
-  "version": "0.1.0",
+  "name": "@silviomarini/blog-engine",
+  "version": "0.2.0",
   "description": "Blog engine package",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -26,15 +26,20 @@
   "license": "UNLICENSED",
   "private": false,
   "peerDependencies": {
+    "next": ">=14.0.0",
     "openai": ">=4.0.0"
   },
   "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    },
     "openai": {
       "optional": true
     }
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
+    "next": "^15.0.0",
     "openai": "^4.0.0",
     "typescript": "^5.5.0"
   }

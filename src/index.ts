@@ -26,3 +26,10 @@ export { linkArticles, unlinkArticle } from './link'
 
 export type { TranslateArticleOptions } from './translate'
 export { translateArticle } from './translate'
+
+export type { RouteHandlerConfig } from './adapters/nextjs'
+export {
+  createArticlesRouteHandlers,
+  createArticleByIdRouteHandlers,
+  createArticleBySlugRouteHandlers,
+} from './adapters/nextjs'
