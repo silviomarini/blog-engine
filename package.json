@@ -1,6 +1,6 @@
 {
   "name": "@silviomarini/blog-engine",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Blog engine package",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
