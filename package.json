@@ -1,0 +1,41 @@
+{
+  "name": "@marinisilvio/blog-engine",
+  "version": "0.1.0",
+  "description": "Blog engine package",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/marinisilvio/blog-engine.git"
+  },
+  "keywords": [],
+  "author": "marinisilvio",
+  "license": "UNLICENSED",
+  "private": false,
+  "peerDependencies": {
+    "openai": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "openai": "^4.0.0",
+    "typescript": "^5.5.0"
+  }
+}
