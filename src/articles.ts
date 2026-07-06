@@ -189,3 +189,66 @@ export async function deleteArticle(db: Db, id: string): Promise<{ deleted: true
   if (error) throw new Error(error.message)
   return { deleted: true }
 }
+
+/**
+ * Build a map of group_id → sibling slug for a batch of articles, in a single DB query.
+ * Use this on the blog index page to show "Read in EN" badges without N+1 queries.
+ *
+ * @param db         - Supabase client
+ * @param articles   - The articles already fetched for the current page
+ * @param targetLang - The other language whose slugs you want
+ * @returns          - Record<group_id, slug> for published siblings in targetLang
+ */
+export async function buildSiblingMap(
+  db: Db,
+  articles: Array<{ group_id: string | null }>,
+  targetLang: 'it' | 'en'
+): Promise<Record<string, string>> {
+  const groupIds = [...new Set(articles.map(a => a.group_id).filter((g): g is string => Boolean(g)))]
+  if (groupIds.length === 0) return {}
+
+  const now = new Date().toISOString()
+  const { data } = await db
+    .from('articles')
+    .select('group_id, slug')
+    .eq('lang', targetLang)
+    .eq('published', true)
+    .or(`published_at.lte.${now},published_at.is.null`)
+    .in('group_id', groupIds)
+
+  return Object.fromEntries(
+    (data ?? []).map((s: { group_id: string; slug: string }) => [s.group_id, s.slug])
+  )
+}
+
+/** Shape returned by getArticleSiblings */
+export interface ArticleSibling {
+  slug: string
+  lang: 'it' | 'en'
+  title: string
+}
+
+/**
+ * Fetch the other language versions of an article (for the in-article language switcher).
+ * Does NOT filter by published_at — only requires published: true.
+ *
+ * @param db        - Supabase client
+ * @param groupId   - The article's group_id (null → returns empty array immediately)
+ * @param currentId - ID of the current article (excluded from results)
+ */
+export async function getArticleSiblings(
+  db: Db,
+  groupId: string | null,
+  currentId: string
+): Promise<ArticleSibling[]> {
+  if (!groupId) return []
+
+  const { data } = await db
+    .from('articles')
+    .select('slug, lang, title')
+    .eq('group_id', groupId)
+    .eq('published', true)
+    .neq('id', currentId)
+
+  return (data ?? []) as ArticleSibling[]
+}

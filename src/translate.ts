@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
 import { slugify } from './slugify'
 import type { Article, FAQ } from './types'
@@ -155,4 +156,56 @@ ${JSON.stringify(toTranslate, null, 2)}`
   }
 
   return created as Article
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Db2 = { from: (table: string) => any }
+
+export interface TranslateRouteHandlerConfig {
+  db: Db2
+  openaiApiKey: string
+  getAuthContext: (req: NextRequest) => Promise<{ isAdmin: boolean }>
+  options?: TranslateArticleOptions
+}
+
+function ok(data: unknown, status = 200): NextResponse {
+  return NextResponse.json({ data }, { status })
+}
+
+function err(message: string, status: number): NextResponse {
+  return NextResponse.json({ error: message }, { status })
+}
+
+type IdContext = { params: Promise<{ id: string }> }
+
+/**
+ * Generates { POST } handler for the article translation endpoint.
+ * Requires admin access. Uses OpenAI to translate the article.
+ *
+ * POST body: { targetLang?: 'it' | 'en' }  (defaults to 'en')
+ *
+ * Usage in app/api/v1/articles/[id]/translate/route.ts:
+ *   import { createArticleTranslateRouteHandlers } from '@silviomarini/blog-engine/translate'
+ *   export const { POST } = createArticleTranslateRouteHandlers({ db, openaiApiKey, getAuthContext })
+ */
+export function createArticleTranslateRouteHandlers(config: TranslateRouteHandlerConfig) {
+  const { db, openaiApiKey, getAuthContext, options } = config
+
+  async function POST(req: NextRequest, context: IdContext): Promise<NextResponse> {
+    try {
+      const { isAdmin } = await getAuthContext(req)
+      if (!isAdmin) return err('Forbidden', 403)
+
+      const { id } = await context.params
+      const body = await req.json() as Record<string, unknown>
+      const targetLang = body.targetLang === 'it' ? 'it' : 'en'
+
+      const data = await translateArticle(db, id, openaiApiKey, { ...options, targetLang })
+      return ok(data, 201)
+    } catch (e) {
+      return err(e instanceof Error ? e.message : 'Internal error', 500)
+    }
+  }
+
+  return { POST }
 }

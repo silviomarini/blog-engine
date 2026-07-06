@@ -6,7 +6,9 @@ import {
   updateArticle,
   deleteArticle,
   getArticleBySlug,
+  getAdminArticles,
 } from '../articles'
+import { linkArticles, unlinkArticle } from '../link'
 import type { CreateArticleBody, UpdateArticleBody } from '../types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -176,4 +178,77 @@ export function createArticleBySlugRouteHandlers(config: RouteHandlerConfig) {
   }
 
   return { GET }
+}
+
+/**
+ * Generates { GET } handler for the admin articles list endpoint.
+ * Returns all articles including drafts. Requires admin access.
+ *
+ * Usage in app/api/v1/articles/admin/route.ts:
+ *   export const { GET } = createAdminArticlesRouteHandlers({ db, getAuthContext })
+ */
+export function createAdminArticlesRouteHandlers(config: Pick<RouteHandlerConfig, 'db' | 'getAuthContext'>) {
+  const { db, getAuthContext } = config
+
+  async function GET(req: NextRequest): Promise<NextResponse> {
+    try {
+      const { isAdmin } = await getAuthContext(req)
+      if (!isAdmin) return err('Forbidden', 403)
+
+      const data = await getAdminArticles(db)
+      return ok(data)
+    } catch (e) {
+      return err(e instanceof Error ? e.message : 'Internal error', 500)
+    }
+  }
+
+  return { GET }
+}
+
+/**
+ * Generates { POST, DELETE } handlers for the article language-link endpoint.
+ * Both require admin access.
+ *
+ * POST   — body: { partner_id: string } — links two articles as language versions
+ * DELETE — removes the article from its language group (sets group_id to null)
+ *
+ * Usage in app/api/v1/articles/[id]/link/route.ts:
+ *   export const { POST, DELETE } = createArticleLinkRouteHandlers({ db, getAuthContext })
+ */
+export function createArticleLinkRouteHandlers(config: Pick<RouteHandlerConfig, 'db' | 'getAuthContext'>) {
+  const { db, getAuthContext } = config
+
+  async function POST(req: NextRequest, context: IdContext): Promise<NextResponse> {
+    try {
+      const { isAdmin } = await getAuthContext(req)
+      if (!isAdmin) return err('Forbidden', 403)
+
+      const { id } = await context.params
+      const body = await req.json() as Record<string, unknown>
+      const partnerId = body.partner_id
+      if (!partnerId || typeof partnerId !== 'string') {
+        return err('partner_id is required', 400)
+      }
+
+      const data = await linkArticles(db, id, partnerId)
+      return ok(data)
+    } catch (e) {
+      return err(e instanceof Error ? e.message : 'Internal error', 500)
+    }
+  }
+
+  async function DELETE(req: NextRequest, context: IdContext): Promise<NextResponse> {
+    try {
+      const { isAdmin } = await getAuthContext(req)
+      if (!isAdmin) return err('Forbidden', 403)
+
+      const { id } = await context.params
+      const data = await unlinkArticle(db, id)
+      return ok(data)
+    } catch (e) {
+      return err(e instanceof Error ? e.message : 'Internal error', 500)
+    }
+  }
+
+  return { POST, DELETE }
 }
